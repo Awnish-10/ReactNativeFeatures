@@ -5,114 +5,67 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {
+  Alert,
   SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
   Text,
+  TouchableOpacity,
   useColorScheme,
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const ws = useMemo(() => new WebSocket('ws://echo.websocket.org'), []);
+  const setWebSocket = useCallback(() => {
+    ws.onopen = () => {
+      // Connection opened
+      console.log('WebSocket connection opened');
+      ws.send('Hello, server!'); // Send a message to the server
+    };
+    ws.onmessage = e => {
+      // Receive a message from the server
+      Alert.alert('message received');
+      console.log('onmessage', e.data);
+    };
+    ws.onerror = e => {
+      // An error occurred
+      console.log('onerror', e.message);
+    };
+    ws.onclose = e => {
+      // Connection closed
+      console.log('onclose', e.code, e.reason);
+    };
+  }, [ws]);
+  useEffect(() => {
+    setWebSocket();
+  }, [setWebSocket]);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    flex: 1,
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
+    <SafeAreaView
+      style={[
+        backgroundStyle,
+        {flex: 1, justifyContent: 'center', alignItems: 'center'},
+      ]}>
+      <View>
+        <Text>WebSocket Example</Text>
+        <TouchableOpacity
+          onPress={() => {
+            ws.send('Hello, server!');
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+          <Text>SEND MESSAGE</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
